@@ -70,7 +70,7 @@ edit_dist_asm:
   CMPL  $0, %EBX          # EBX - 0
   JE    DONE1
 
-  CMPL $0, %ESI           # ESI - 0
+  CMPL  $0, %ESI           # ESI - 0
   JE    DONE2
 
   MOVL  4(%EBX), %ECX
@@ -97,8 +97,27 @@ edit_dist_asm:
   #CALL STUFF   -----> copy DONE3
   MOVL  %EAX, 4(%ESP)       # replace <- edit_dist_asm(root1->next, root2->next)
 
-  
+  LEAL  12(%ESP), %ECX
+  CMPL  8(%ESP), %ECX       # insert - delete
+  JA    AFTER0
+  CMPL  4(%ESP), %ECX       # insert - replace
+  JA    AFTER0
+  MOVL  12(%ESP), %EAX      # EAX <- insert
+  INCL  %EAX                # EAX <- EAX + 1
+  JMP   RETURN0
 
+AFTER0:
+  LEAL  8(%ESP), %ECX
+  CMPL  4(%ESP), %ECX       # delete - replace
+  JA    AFTER1
+  MOVL  8(%ESP), %EAX
+  INCL  %EAX
+  JMP   RETURN0
+
+AFTER1:
+  MOVL  4(%ESP), %EAX
+  INCL  %EAX
+  JMP   RETURN0
 
 
 
