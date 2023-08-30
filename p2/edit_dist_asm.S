@@ -1,7 +1,8 @@
+
 /*
  * tab:2
  *
- * edit_dist_asm.S - inplementation of computing edit distance between two (linked) lists
+ * mystery_asm.S - Assembly mystery
  *
  * Permission to use, copy, modify, and distribute this software and its
  * documentation for any purpose, without fee, and without written agreement is
@@ -21,79 +22,70 @@
  * THE UNIVERSITY OF ILLINOIS HAS ANY OBLIGATION TO PROVIDE MAINTENANCE,
  * SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS."
  *
- * Author:        Xiang Li
+ * Author:        Yan Miao
  * Version:       1
- * Creation Date: Sat Aug 20 2022
+ * Creation Date: Sun Aug 29 2021
+ * Author:        Xiang Li
+ * Version:       2
+ * Modified Date: Sun Aug 21 2022
  * History:
- *    XL    1    Sat Aug 20 2022
- *        First written.
+ *    YM    1    Sun Aug 29 2021
+ *    XL    2    Sun Aug 21 2022
  */
 
 .data
-  UNUSED  = 0
-  VAL   = 4
-  NEXT = 8
 
 .text
-.global edit_dist_asm
+.global mystery_asm
 
-# Edit Dist ASM (Assembly)
-# Declaration is in edit_dist.h
-#
-# Registers:
-#   EAX - Return Value
-#   EBX - root1
-#   ESI - root2
-#   you may choose how to store your local/temp variables
-#
+# mystery (Assembly)
 
-edit_dist_asm:
-  pushl %ebp
-  movl %esp, %ebp
+mystery_asm:
+  pushl %ebp          # push ebp to stack space 0
+  movl %esp, %ebp     # ebp <- esp, pointing at the next available stack space (space 1)
+  PUSHL %EBX          # space 1
+  PUSHL %ESI          # space 2
+  PUSHL %EDI          # space 3
 
-  # --- STUDENT CODE STARTS HERE ---
+  MOVL 12(%EBP), %EBX # EBX <- M[%EBP + 12] (space -2)
+  CMPL $24, %EBX      # flags <- (EBX-24)
+  JA DONE1            # jmp if greater than
+  MOVL 8(%EBP), %EBX  # EBX <- M[EBP + 8] (space -1)
+  CMPL $42, %EBX      # flags <- (EBX-42)
+  JAE DONE1
+  MOVL $0, %EDI       # EDI <- 0
+  MOVL $1, %ESI       # ESI <- 1
 
-  PUSHL %ECX
-  PUSHL %EDX
-
-  MOVL  %EBX, %ECX        # ECX <- root1
-  MOVL  %ESI, %EDX        # EDX <- root2
-  ORL   %EDX, %ECX        # ECX <- ECX OR EDX
-  CMPL  $0, %ECX          # ECX - 0
-  JE    DONE0
-
-  CMPL  $0, %EBX          # EBX - 0
-  JE    DONE1
-
-  CMPL $0, %ESI           # ESI - 0
-  JE    DONE2
-
-DONE0:
-  XORL  %EAX, %EAX        # EAX <- 0
-  JMP   RETURN0
-
-DONE1:
-  # PUSHL %EBX
-  # PUSHL %ESI
-  # PUSH SOMETHING
-
-  # LEAL  8(%ESI), %ESI     # ESI <- M[ESI + 8] (ESI = root2->next)
-  # CALL  edit_dist_asm
-  INCL  %EAX
-  JMP   RETURN0
+LOOP1:
+  CMPL %ESI, %EBX     # EBX - ESI
+  JL DONE2            # signed less than
+  ADDL %ESI, %EDI     # EDI <- EDI + ESI (EDI is the EBXth triangular number)
+  INCL %ESI           # ESI <- ESI + 1
+  JMP LOOP1           # loop
 
 DONE2:
-  #PUSH STUFF
+  MOVL 12(%EBP), %EBX # EBX <- M[EBP + 12]
+  MOVL $1, %EDX       # EDX <- 1
+  MOVL $1, %ESI       # ESI <- 1
 
-  # LEAL  8(%EBX), %EBX     # EBX <- M[EBX + 8] (EBX = root1->next)
-  # CALL  edit_dist_asm
-  INCL  %EAX
-  JMP   RETURN0
+LOOP2:
+  CMPL %ESI, %EBX     # EBX - ESI
+  JL DONE3            # signed less than
+  IMULL %ESI, %EDX    # EDX <- EDX * ESI (EDX <- EBX factorial)
+  INCL %ESI           # ESI <- ESI + 1
+  JMP LOOP2           # loop
 
-RETURN0:
-  # TEARDOWN0
-  # --- STUDENT CODE ENDS HERE ---
+DONE3:
+  ORL %EDI, %EDX      # EDX <- EDX OR EDI (factorial OR triangular num)
+  MOVL %EDX, %EAX     # EAX <- EDX
+  JMP DONE
+  
+DONE1:
+  MOVL $0, %EAX       # EAX <- 0
 
+DONE:
+  POPL %EDI 
+  POPL %ESI
+  POPL %EBX
   leave
   ret
-
