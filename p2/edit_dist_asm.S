@@ -53,7 +53,7 @@ edit_dist_asm:
 
   # --- STUDENT CODE STARTS HERE ---
 
-  # here's what the stack looks like (top to bottom):
+  # here's what the stack looks like (top to bottom): Do we want to push Callee FP, Return Address and Return Value?
   # replace <- stack ptr ESP
   # delete
   # insert
@@ -63,10 +63,13 @@ edit_dist_asm:
   # EBX
   # root1
   # root2 <- frame ptr EBP
-  PUSHL %EBX
-  PUSHL %ESI  
-  PUSHL %ECX
-  PUSHL %EDX
+  PUSHL %EBX              # push root1 (parameter)
+  PUSHL %ESI              # push root2 (parameter)
+  PUSHL %ECX              # push register ECX (used for )
+  PUSHL %EDX              # push register EDX (used for computations)
+  PUSHL $0                # push RV
+
+  #push CFP, RA, RV?
   PUSHL $0                # insert
   PUSHL $0                # delete
   PUSHL $0                # replace
@@ -76,91 +79,102 @@ edit_dist_asm:
 
   MOVL  %EBX, %ECX        # ECX <- root1
   ORL   %ESI, %ECX        # ECX <- root1 OR root2
-  CMPL  $0, %ECX
-  JE    DONE0             # if root1 OR root2 = NUll, done0
-  CMPL  $0, %EBX
-  JE    DONE1             # if root1 = NULL, done1
-  CMPL  $0, %ESI
-  JE    DONE2             # if root2 = NULL, done2
+  CMPL  $0, %ECX          # (root1 && root2 == 0)?  (to set flags)
+  JE    DONE0             # if root1 (bitwise OR) root2 = 0 (NUll), go to done0 (done0 = return 0)
+  CMPL  $0, %EBX          # does root1 == 0? (to set flags)
+  JE    DONE1             # if root1 = NULL, done1                   (done1 = return 1 + edit_dist_c(root1,root2->next))
+  CMPL  $0, %ESI          # does root2 == 0? (perform comparison)
+  JE    DONE2             # if root2 = NULL, done2                   (done2 = return 1 + (edit_dist_c(root1->next,root2)))
 
-  MOVL  4(%EBX), %ECX
-  MOVL  4(%ESI), %EDX
-  CMPL  %ECX, %EDX
-  JE    DONE3             # if root1->val = root2->val, done3
+  MOVL  4(%EBX), %ECX     # ECX <- root1->val
+  MOVL  4(%ESI), %EDX     # EDX <- root2->val
+  CMPL  %ECX, %EDX        # (root1->val == root2->val) ?? 
+  JE    DONE3             # if root1->val = root2->val, done3        (done3 = return (edit_dist_c(root1->next,root2->next)))
+
+
+
+
+
+
+  #$#$#$#$#$#$#$#$#$#$#$#$#$   The next section of code sets the insert, delete, and replace to edit_dist_c() #$#$#$#$#$#$#$#$#$#$#$#$#$
+
 
   LEAL  8(%EBX), %ECX     # ECX <- M[EBX + 8] (ECX = root1->next)
   PUSHL %ESI              # push root2
   PUSHL %ECX              # push root1->next
-  CALL  edit_dist_asm
-  MOVL  %EAX, 8(%ESP)    # insert <- edit_dist_asm(root1->next, root2)
+  CALL  edit_dist_asm     # Go to function (insert = edit_dist_c(root1->next, root2))
+  MOVL  %EAX, 8(%ESP)     # insert = edit_dist_c(root1->next, root2)
 
   LEAL  8(%ESI), %ECX     # ECX <- M[ESI + 8] (ECX = root2->next)
   PUSHL %ECX              # push root2->next
   PUSHL %EBX              # push root1
-  CALL  edit_dist_asm
-  MOVL  %EAX, 4(%ESP)     # delete <- edit_dist_asm(root1, root2->next)
+  CALL  edit_dist_asm     # go to function (delete = edit_dist_c(root1, root2->next))
+  MOVL  %EAX, 4(%ESP)     # delete <- edit_dist_c(root1, root2->next)
 
   LEAL  8(%EBX), %ECX     # ECX = root1->next
   LEAL  8(%ESI), %EDX     # EDX = root2->next
   PUSHL %EDX              # push root2->next
   PUSHL %ECX              # push root1->next
-  CALL  edit_dist_asm
-  MOVL  %EAX, (%ESP)      # replace <- edit_dist_asm(root1->next, root2->next)
+  CALL  edit_dist_asm     # go to function (delete = edit_dist_c(root1))
+  MOVL  %EAX, (%ESP)      # replace <- edit_dist_c(root1->next, root2->next)
 
-  LEAL  8(%ESP), %ECX
+  ##$#$#$#$#$#$#$#$#$#$#$#$#$ The next section of code is the if statements for the insert, delete, replace #$#$#$#$#$#$#$#$#$#$##$#$#$#$$3
+
+  LEAL  8(%ESP), %ECX     # ECX points to insert now
   CMPL  4(%ESP), %ECX     # insert - delete
-  JA    AFTER0            # if insert > delete, false
+  JA    AFTER0            # if insert > delete, false ( we go on and don't return)
   CMPL  (%ESP), %ECX      # insert - replace
-  JA    AFTER0            # if insert > replace, false
+  JA    AFTER0            # if insert > replace, false ( we go on and don't return)
   MOVL  8(%ESP), %EAX     # EAX <- insert
   INCL  %EAX              # EAX <- EAX + 1
-  JMP   RETURN0
+  JMP   RETURN0           # return (1 + insert)
 
 AFTER0:
-  LEAL  4(%ESP), %ECX
+  LEAL  4(%ESP), %ECX     # ECX points to delete now
   CMPL  (%ESP), %ECX      # delete - replace
-  JA    AFTER1
-  MOVL  4(%ESP), %EAX
-  INCL  %EAX
-  JMP   RETURN0
+  JA    AFTER1            # if delete > replace, then we go on and don't return
+  MOVL  4(%ESP), %EAX     # return value contains delete
+  INCL  %EAX              # Then increment, so return register has delete + 1
+  JMP   RETURN0           # return (1 + delete) Larry make sure that EAX has the value of delete... I can't tell at first glance
 
 AFTER1:
-  MOVL  (%ESP), %EAX
-  INCL  %EAX
-  JMP   RETURN0
+  MOVL  (%ESP), %EAX      # Return value gets replace
+ INCL  %EAX               # Then incremented by one so that it is 1 + replace
+  JMP   RETURN0           # Then we are done, and proceed to stack teardown
 
-DONE0:
+DONE0: # (done0 = return 0)
   XORL  %EAX, %EAX        # EAX <- 0
-  JMP   RETURN0
+  JMP   RETURN0           # Go to return0
 
-DONE1:
+DONE1:                    # (done1 = return 1 + edit_dist_c(root1,root2->next))
   LEAL  8(%ESI), %ECX     # ECX <- M[ESI + 8] (ECX = root2->next)
   PUSHL %ECX              # push root2->next
   PUSHL %EBX              # push root1
-  CALL  edit_dist_asm
-  INCL  %EAX
-  JMP   RETURN0
+  CALL  edit_dist_asm     # call function again
+  INCL  %EAX              # increment return value by 1
+  JMP   RETURN0           # go to return 0
 
-DONE2:
+DONE2:                    # (done2 = return 1 + (edit_dist_c(root1->next,root2)))
+
   LEAL  8(%EBX), %ECX     # ECX <- M[EBX + 8] (ECX = root1->next)
   PUSHL %ESI              # push root2
-  PUSHL %ECX              # push root1->next
-  CALL  edit_dist_asm
-  INCL  %EAX
-  JMP   RETURN0
+  PUSHL %ECX              # push root1->next (pushing parameters to stack)
+  CALL  edit_dist_asm     # Call the function again
+  INCL  %EAX              # Increment return value by 1
+  JMP   RETURN0           # go to return 0
 
-DONE3:
+DONE3:                    # done3 = return (edit_dist_c(root1->next,root2->next))
   LEAL  8(%EBX), %ECX     # ECX = root1->next
   LEAL  8(%ESI), %EDX     # EDX = root2->next
   PUSHL %EDX              # push root2->next
   PUSHL %ECX              # push root1->next
-  CALL  edit_dist_asm
+  CALL  edit_dist_asm     # Call the function again
   MOVL  %EAX, 4(%ESP)     # replace <- edit_dist_asm(root1->next, root2->next)
-  JMP   RETURN0
+  JMP   RETURN0           # go to return 0
 
 RETURN0:
   # TEARDOWN0
-  ADDL  $
+  ADDL  $  #something something
   # --- STUDENT CODE ENDS HERE ---
 
   leave
