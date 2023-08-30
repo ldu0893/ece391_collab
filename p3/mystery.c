@@ -35,7 +35,22 @@
 #include "mystery.h"
 
 uint32_t mystery_c(uint32_t x, uint32_t y) {
-  //------- YOUR CODE HERE -------
+  // Initial Checks for invalid inputs
+  if (y > 24 || x >= 42)
+    return 0;
 
-  //------------------------------
+  // Calculate triangular number of x
+  uint32_t triangle = 0;
+  for (int i = 1; i <= x; i++) {
+    triangle += i;
+  }
+
+  // Calculate factorial number of y
+  uint32_t factorial = 1;
+  for (int i = 1; i <= y; i++) {
+    factorial *= i;
+  }
+
+  // OR the triangular and factorial numbers
+  return triangle | factorial;
 }
