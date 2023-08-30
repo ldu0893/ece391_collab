@@ -1,0 +1,19 @@
+1.) Show the value of variable "solution" in hex format.
+
+    print/x solution
+
+Show the top four bytes on your stack word-by-word.  It should look something like this "0x0102 0x0304", NOT "0x01020304".
+
+    x/2h $sp
+
+Print all register values.
+
+    info registers
+
+Set a breakpoint at "ece.c" line 391.
+
+    break ece.c:391
+
+Connect to the test_(no)debug vm in the lab setup.
+
+    target remote 10.0.2.2:1234
