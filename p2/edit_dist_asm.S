@@ -53,104 +53,114 @@ edit_dist_asm:
 
   # --- STUDENT CODE STARTS HERE ---
 
-  # which part goes first? check 220
+  # here's what the stack looks like (top to bottom):
+  # replace <- stack ptr ESP
+  # delete
+  # insert
+  # EDX
+  # ECX
+  # ESI
+  # EBX
+  # root1
+  # root2 <- frame ptr EBP
+  PUSHL %EBX
+  PUSHL %ESI  
   PUSHL %ECX
   PUSHL %EDX
-
   PUSHL $0                # insert
   PUSHL $0                # delete
   PUSHL $0                # replace
 
+  LEAL  -4(%EBP), %EBX    # EBX <- root1
+  LEAL  (%EBP), %ESI      # ESI <- root2 ---> is this step necessary?? need to know what the stack looks like b4
+
   MOVL  %EBX, %ECX        # ECX <- root1
-  MOVL  %ESI, %EDX        # EDX <- root2
-  ORL   %EDX, %ECX        # ECX <- ECX OR EDX
-  CMPL  $0, %ECX          # ECX - 0
-  JE    DONE0
-
-  CMPL  $0, %EBX          # EBX - 0
-  JE    DONE1
-
-  CMPL  $0, %ESI           # ESI - 0
-  JE    DONE2
+  ORL   %ESI, %ECX        # ECX <- root1 OR root2
+  CMPL  $0, %ECX
+  JE    DONE0             # if root1 OR root2 = NUll, done0
+  CMPL  $0, %EBX
+  JE    DONE1             # if root1 = NULL, done1
+  CMPL  $0, %ESI
+  JE    DONE2             # if root2 = NULL, done2
 
   MOVL  4(%EBX), %ECX
   MOVL  4(%ESI), %EDX
   CMPL  %ECX, %EDX
-  JE    DONE3
+  JE    DONE3             # if root1->val = root2->val, done3
 
-  # as of now, ESP points to replace - 4
-  # delete = ESP + 8
-  # insert = ESP + 12
-  # PUSH STUFF
-  # LEAL  8(%EBX), %EBX     # EBX <- M[EBX + 8] (EBX = root1->next)
-  # CALL  edit_dist_asm
-  MOVL  %EAX, 12(%ESP)      # insert <- edit_dist_asm(root1->next, root2)
+  LEAL  8(%EBX), %ECX     # ECX <- M[EBX + 8] (ECX = root1->next)
+  PUSHL %ESI              # push root2
+  PUSHL %ECX              # push root1->next
+  CALL  edit_dist_asm
+  MOVL  %EAX, 8(%ESP)    # insert <- edit_dist_asm(root1->next, root2)
 
-  # PUSHL %EBX
-  # PUSHL %ESI
-  # PUSH SOMETHING
-  # LEAL  8(%ESI), %ESI     # ESI <- M[ESI + 8] (ESI = root2->next)
-  # CALL  edit_dist_asm
-  MOVL  %EAX, 8(%ESP)       # delete <- edit_dist_asm(root1, root2->next)
+  LEAL  8(%ESI), %ECX     # ECX <- M[ESI + 8] (ECX = root2->next)
+  PUSHL %ECX              # push root2->next
+  PUSHL %EBX              # push root1
+  CALL  edit_dist_asm
+  MOVL  %EAX, 4(%ESP)     # delete <- edit_dist_asm(root1, root2->next)
 
-  #PUSH STUFF
-  #CALL STUFF   -----> copy DONE3
-  MOVL  %EAX, 4(%ESP)       # replace <- edit_dist_asm(root1->next, root2->next)
+  LEAL  8(%EBX), %ECX     # ECX = root1->next
+  LEAL  8(%ESI), %EDX     # EDX = root2->next
+  PUSHL %EDX              # push root2->next
+  PUSHL %ECX              # push root1->next
+  CALL  edit_dist_asm
+  MOVL  %EAX, (%ESP)      # replace <- edit_dist_asm(root1->next, root2->next)
 
-  LEAL  12(%ESP), %ECX
-  CMPL  8(%ESP), %ECX       # insert - delete
-  JA    AFTER0
-  CMPL  4(%ESP), %ECX       # insert - replace
-  JA    AFTER0
-  MOVL  12(%ESP), %EAX      # EAX <- insert
-  INCL  %EAX                # EAX <- EAX + 1
+  LEAL  8(%ESP), %ECX
+  CMPL  4(%ESP), %ECX     # insert - delete
+  JA    AFTER0            # if insert > delete, false
+  CMPL  (%ESP), %ECX      # insert - replace
+  JA    AFTER0            # if insert > replace, false
+  MOVL  8(%ESP), %EAX     # EAX <- insert
+  INCL  %EAX              # EAX <- EAX + 1
   JMP   RETURN0
 
 AFTER0:
-  LEAL  8(%ESP), %ECX
-  CMPL  4(%ESP), %ECX       # delete - replace
+  LEAL  4(%ESP), %ECX
+  CMPL  (%ESP), %ECX      # delete - replace
   JA    AFTER1
-  MOVL  8(%ESP), %EAX
-  INCL  %EAX
-  JMP   RETURN0
-
-AFTER1:
   MOVL  4(%ESP), %EAX
   INCL  %EAX
   JMP   RETURN0
 
-
+AFTER1:
+  MOVL  (%ESP), %EAX
+  INCL  %EAX
+  JMP   RETURN0
 
 DONE0:
   XORL  %EAX, %EAX        # EAX <- 0
   JMP   RETURN0
 
 DONE1:
-  # PUSHL %EBX
-  # PUSHL %ESI
-  # PUSH SOMETHING
-
-  # LEAL  8(%ESI), %ESI     # ESI <- M[ESI + 8] (ESI = root2->next)
-  # CALL  edit_dist_asm
+  LEAL  8(%ESI), %ECX     # ECX <- M[ESI + 8] (ECX = root2->next)
+  PUSHL %ECX              # push root2->next
+  PUSHL %EBX              # push root1
+  CALL  edit_dist_asm
   INCL  %EAX
   JMP   RETURN0
 
 DONE2:
-  #PUSH STUFF
-
-  # LEAL  8(%EBX), %EBX     # EBX <- M[EBX + 8] (EBX = root1->next)
-  # CALL  edit_dist_asm
+  LEAL  8(%EBX), %ECX     # ECX <- M[EBX + 8] (ECX = root1->next)
+  PUSHL %ESI              # push root2
+  PUSHL %ECX              # push root1->next
+  CALL  edit_dist_asm
   INCL  %EAX
   JMP   RETURN0
 
 DONE3:
-  #PUSH STUFF
-
-  #CALL STUFF
+  LEAL  8(%EBX), %ECX     # ECX = root1->next
+  LEAL  8(%ESI), %EDX     # EDX = root2->next
+  PUSHL %EDX              # push root2->next
+  PUSHL %ECX              # push root1->next
+  CALL  edit_dist_asm
+  MOVL  %EAX, 4(%ESP)     # replace <- edit_dist_asm(root1->next, root2->next)
   JMP   RETURN0
 
 RETURN0:
   # TEARDOWN0
+  ADDL  $
   # --- STUDENT CODE ENDS HERE ---
 
   leave
