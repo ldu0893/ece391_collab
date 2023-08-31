@@ -40,49 +40,57 @@
 
 # mystery (Assembly)
 
-mystery_asm:
-  pushl %ebp
-  movl %esp, %ebp
-  PUSHL %EBX
-  PUSHL %ESI
-  PUSHL %EDI
+# CODE OUPUT = x! || yth triangular num
 
-  MOVL 12(%EBP), %EBX
-  CMPL $24, %EBX
-  JA DONE1
-  MOVL 8(%EBP), %EBX
-  CMPL $42, %EBX
-  JAE DONE1
-  MOVL $0, %EDI
+mystery_asm:
+  # Setup stack
+  pushl %ebp            # EBP to stack
+  movl %esp, %ebp       # ESP to EBP - base of stack is now top of stack
+  PUSHL %EBX            # EBX to stack
+  PUSHL %ESI            # Source index to stack
+  PUSHL %EDI            # Destination index to stack
+
+  # Checking for inputs out of bounds - will not compute output if x>24 or y>=42 (prevents overflow)
+  MOVL 12(%EBP), %EBX   # EBX <- M[EBP + 12] == x
+  CMPL $24, %EBX        # EBX - 24
+  JA DONE1              # If greater (unsigned comparison), jump to done
+  MOVL 8(%EBP), %EBX    # EBX <- M[EBP + 8] == y
+  CMPL $42, %EBX        # EBX - 42 
+  JAE DONE1             # If greater or equal (unsigned comparison), jump to done
+  MOVL $0, %EDI         # If not done, EDI <- 0, ESI <- 1
   MOVL $1, %ESI
 
-LOOP1:
-  CMPL %ESI, %EBX
-  JL DONE2
-  ADDL %ESI, %EDI
-  INCL %ESI
+# Loop to compute triangular number
+LOOP1:                  # while
+  CMPL %ESI, %EBX       # EBX - ESI
+  JL DONE2              # If EBX < ESI (signed), DONE2
+  ADDL %ESI, %EDI       # EDI += ESI
+  INCL %ESI             # EDI = 1 + 2 + 3 + 4 .....
   JMP LOOP1
 
 DONE2:
-  MOVL 12(%EBP), %EBX 
-  MOVL $1, %EDX       
-  MOVL $1, %ESI       
+  MOVL 12(%EBP), %EBX   # EBX <- M[EBP + 12] - store y in EBX
+  MOVL $1, %EDX         # EDX <- 1
+  MOVL $1, %ESI         # ESI <- 1
 
 LOOP2:
-  CMPL %ESI, %EBX
-  JL DONE3
-  IMULL %ESI, %EDX
+  CMPL %ESI, %EBX       # EBX - ESI
+  JL DONE3              # If EBX < ESI (signed), DONE3
+  IMULL %ESI, %EDX      
   INCL %ESI
   JMP LOOP2
 
+# Store output in EAX
 DONE3:
-  ORL %EDI, %EDX 
-  MOVL %EDX, %EAX
+  ORL %EDI, %EDX        # Or the two results
+  MOVL %EDX, %EAX       # Move result to EAX
   JMP DONE
   
+# If invalid inputs (too large), output = 0
 DONE1:
   MOVL $0, %EAX
 
+# Clean stack
 DONE:
   POPL %EDI
   POPL %ESI
