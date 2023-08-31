@@ -61,21 +61,23 @@ edit_dist_asm:
   # ECX
   # ESI
   # EBX
+  # old EDB <- frame ptr EBP
+  # return addr
   # root1
-  # root2 <- frame ptr EBP
+  # root2
   PUSHL %EBX              # push root1 (parameter)
   PUSHL %ESI              # push root2 (parameter)
   PUSHL %ECX              # push register ECX (used for )
   PUSHL %EDX              # push register EDX (used for computations)
-  PUSHL $0                # push RV
+  # PUSHL $0                # push RV
 
-  #push CFP, RA, RV?
+  # push CFP, RA, RV?
   PUSHL $0                # insert
   PUSHL $0                # delete
   PUSHL $0                # replace
 
-  LEAL  -4(%EBP), %EBX    # EBX <- root1
-  LEAL  (%EBP), %ESI      # ESI <- root2 ---> is this step necessary?? need to know what the stack looks like b4
+  LEAL  8(%EBP), %EBX     # EBX <- root1
+  LEAL  12(%EBP), %ESI    # ESI <- root2 
 
   MOVL  %EBX, %ECX        # ECX <- root1
   ORL   %ESI, %ECX        # ECX <- root1 OR root2
@@ -86,18 +88,15 @@ edit_dist_asm:
   CMPL  $0, %ESI          # does root2 == 0? (perform comparison)
   JE    DONE2             # if root2 = NULL, done2                   (done2 = return 1 + (edit_dist_c(root1->next,root2)))
 
-  MOVL  4(%EBX), %ECX     # ECX <- root1->val
-  MOVL  4(%ESI), %EDX     # EDX <- root2->val
+  MOVL  (%EBX), %ECX
+  MOVL  4(%ECX), %ECX     # ECX <- root1->val
+  MOVL  (%ESI), %EDX
+  MOVL  4(%EDX), %EDX     # EDX <- root2->val
   CMPL  %ECX, %EDX        # (root1->val == root2->val) ?? 
   JE    DONE3             # if root1->val = root2->val, done3        (done3 = return (edit_dist_c(root1->next,root2->next)))
 
 
-
-
-
-
   #$#$#$#$#$#$#$#$#$#$#$#$#$   The next section of code sets the insert, delete, and replace to edit_dist_c() #$#$#$#$#$#$#$#$#$#$#$#$#$
-
 
   LEAL  8(%EBX), %ECX     # ECX <- M[EBX + 8] (ECX = root1->next)
   PUSHL %ESI              # push root2
@@ -138,6 +137,7 @@ AFTER0:
   JMP   RETURN0           # return (1 + delete) Larry make sure that EAX has the value of delete... I can't tell at first glance
 
 AFTER1:
+
   MOVL  (%ESP), %EAX      # Return value gets replace
  INCL  %EAX               # Then incremented by one so that it is 1 + replace
   JMP   RETURN0           # Then we are done, and proceed to stack teardown
@@ -174,9 +174,10 @@ DONE3:                    # done3 = return (edit_dist_c(root1->next,root2->next)
 
 RETURN0:
   # TEARDOWN0
-  ADDL  $  #something something
+  # ADDL  $  #something something
   # --- STUDENT CODE ENDS HERE ---
 
   leave
   ret
+
 
