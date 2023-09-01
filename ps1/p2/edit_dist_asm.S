@@ -67,8 +67,8 @@ edit_dist_asm:
   # root1
   # root2
 
-  PUSHL %EBX              # push root1 (parameter)
-  PUSHL %ESI              # push root2 (parameter)
+  PUSHL %EBX              
+  PUSHL %ESI              
   PUSHL %EDI
   PUSHL %ECX              # push register ECX (used for )
   PUSHL %EDX              # push register EDX (used for computations)
@@ -106,12 +106,14 @@ edit_dist_asm:
   PUSHL %ESI              # push root2
   PUSHL %ECX              # push root1->next
   CALL  edit_dist_asm     # Go to function (insert = edit_dist_c(root1->next, root2))
+  ADDL  $8, %ESP          # pop local params
   MOVL  %EAX, 8(%ESP)     # insert = edit_dist_c(root1->next, root2)
 
   MOVL  8(%ESI), %ECX     # ECX <- M[ESI+8] (ECX = root2->next)
   PUSHL %ECX              # push root2->next
   PUSHL %EBX              # push root1
   CALL  edit_dist_asm     # go to function (delete = edit_dist_c(root1, root2->next))
+  ADDL  $8, %ESP          # pop local params
   MOVL  %EAX, 4(%ESP)     # delete <- edit_dist_c(root1, root2->next)
 
   MOVL  8(%EBX), %ECX     # ECX = root1->next
@@ -119,6 +121,7 @@ edit_dist_asm:
   PUSHL %EDX              # push root2->next
   PUSHL %ECX              # push root1->next
   CALL  edit_dist_asm     # go to function (delete = edit_dist_c(root1))
+  ADDL  $8, %ESP          # pop local params
   MOVL  %EAX, (%ESP)      # replace <- edit_dist_c(root1->next, root2->next)
 
   ##$#$#$#$#$#$#$#$#$#$#$#$#$ The next section of code is the if statements for the insert, delete, replace #$#$#$#$#$#$#$#$#$#$##$#$#$#$$3
@@ -154,6 +157,7 @@ DONE1:                    # (done1 = return 1 + edit_dist_c(root1,root2->next))
   PUSHL %ECX              # push root2->next
   PUSHL %EBX              # push root1
   CALL  edit_dist_asm     # call function again
+  ADDL  $8, %ESP          # pop local params
   INCL  %EAX              # increment return value by 1
   JMP   RETURN0           # go to return 0
 
@@ -163,6 +167,7 @@ DONE2:                    # (done2 = return 1 + (edit_dist_c(root1->next,root2))
   PUSHL %ESI              # push root2
   PUSHL %ECX              # push root1->next (pushing parameters to stack)
   CALL  edit_dist_asm     # Call the function again
+  ADDL  $8, %ESP          # pop local params
   INCL  %EAX              # Increment return value by 1
   JMP   RETURN0           # go to return 0
 
@@ -172,6 +177,7 @@ DONE3:                    # done3 = return (edit_dist_c(root1->next,root2->next)
   PUSHL %EDX              # push root2->next
   PUSHL %ECX              # push root1->next
   CALL  edit_dist_asm     # Call the function again
+  ADDL  $8, %ESP          # pop local params
   MOVL  %EAX, 4(%ESP)     # replace <- edit_dist_asm(root1->next, root2->next)
   JMP   RETURN0           # go to return 0
 
