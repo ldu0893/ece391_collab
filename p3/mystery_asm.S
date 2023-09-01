@@ -39,8 +39,7 @@
 .global mystery_asm
 
 # mystery (Assembly)
-
-# CODE OUPUT = x! || yth triangular num
+# CODE OUPUT = x! | yth triangular num
 
 mystery_asm:
   # Setup stack
@@ -50,11 +49,11 @@ mystery_asm:
   PUSHL %ESI            # Source index to stack
   PUSHL %EDI            # Destination index to stack
 
-  # Checking for inputs out of bounds - will not compute output if x>24 or y>=42 (prevents overflow)
-  MOVL 12(%EBP), %EBX   # EBX <- M[EBP + 12] == x
+  # Checking for inputs out of bounds - will not compute output if y > 24 or x >= 42 (prevents overflow)
+  MOVL 12(%EBP), %EBX   # EBX <- M[EBP + 12] == y
   CMPL $24, %EBX        # EBX - 24
   JA DONE1              # If greater (unsigned comparison), jump to done
-  MOVL 8(%EBP), %EBX    # EBX <- M[EBP + 8] == y
+  MOVL 8(%EBP), %EBX    # EBX <- M[EBP + 8] == x
   CMPL $42, %EBX        # EBX - 42 
   JAE DONE1             # If greater or equal (unsigned comparison), jump to done
   MOVL $0, %EDI         # If not done, EDI <- 0, ESI <- 1

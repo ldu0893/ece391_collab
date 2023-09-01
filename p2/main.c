@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
 
   printf("Runnin Edit Dist in x86\n");
   printf("edit_dist_asm results: \n");
-  result = edit_dist_asm(root1, root2);
+  result = edit_dist_asm(root1, NULL);
   printf("%d\n", result);  
   return 0;
 }

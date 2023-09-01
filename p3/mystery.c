@@ -41,7 +41,7 @@ uint32_t mystery_c(uint32_t x, uint32_t y) {
 
   // Calculate triangular number of x
   uint32_t triangle = 0;
-  for (int i = 1; i <= x; i++) {
+  for (int i = 0; i <= x; i++) {
     triangle += i;
   }
 

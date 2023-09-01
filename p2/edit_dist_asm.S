@@ -29,6 +29,21 @@
  *        First written.
  */
 
+/*
+ * Edit Dist ASM (Assembly)
+ * Declaration is in edit_dist.h
+ *
+ * Registers:
+ *   EAX - Return Value
+ *   EBX - root1
+ *   ESI - root2
+ *   you may choose how to store your local/temp variables
+ *
+ *   Parameters:
+ *   8(%ebp) : root1
+ *   12(%ebp) : root2
+*/
+
 .data
   UNUSED  = 0
   VAL   = 4
@@ -37,63 +52,75 @@
 .text
 .global edit_dist_asm
 
-# Edit Dist ASM (Assembly)
-# Declaration is in edit_dist.h
-#
-# Registers:
-#   EAX - Return Value
-#   EBX - root1
-#   ESI - root2
-#   you may choose how to store your local/temp variables
-#
-
 edit_dist_asm:
+  # Callee Setup
   pushl %ebp
   movl %esp, %ebp
 
-  # --- STUDENT CODE STARTS HERE ---
+  # Save Registers
+  pushl %ebx      # Register for Root1
+  pushl %esi      # Register for Root2
+  pushl %edi      # Temporary 
 
-  PUSHL %ECX
-  PUSHL %EDX
+  # Load Parameters
+  movl 8(%ebp), %ebx
+  movl 12(%ebp), %esi
 
-  MOVL  %EBX, %ECX        # ECX <- root1
-  MOVL  %ESI, %EDX        # EDX <- root2
-  ORL   %EDX, %ECX        # ECX <- ECX OR EDX
-  CMPL  $0, %ECX          # ECX - 0
-  JE    DONE0
+  /* Allocate Space for Local Variables
+    -4(%ebp) : insert
+    -8(%ebp) : delete
+    -12(%ebp) : replace
+  */
+  subl $12, %esp
 
-  CMPL  $0, %EBX          # EBX - 0
-  JE    DONE1
+  # root1 == NULL && root2 == NULL
+ROOTS_CMP_NULL:
+  cmpl %ebx, NULL
+  jne ROOT1_CMP_NULL      # Continue
+  cmpl %esi, NULL
+  jne ROOT1_CMP_NULL      # Continue
+  jmp RET0                # return 0
 
-  CMPL $0, %ESI           # ESI - 0
-  JE    DONE2
+# root1 == NULL
+ROOT1_CMP_NULL:
+  cmpl %ebx, NULL
+  jne ROOT2_CMP_NULL      # Continue
+  jmp RET1_R1_R2NEXT      # return 1 + edit_dist_asm(root1, root2->next)
 
-DONE0:
-  XORL  %EAX, %EAX        # EAX <- 0
-  JMP   RETURN0
+# root2 == NULL
+ROOT2_CMP_NULL:
+  cmpl %esi, NULL
+  jne ROOT_VAL_CMP        # Continue
+  jmp RET1_R1NEXT_R2      # return 1 + edit_dist_asm(root1->next, root2) 
 
-DONE1:
-  # PUSHL %EBX
-  # PUSHL %ESI
-  # PUSH SOMETHING
+ROOT_VAL_CMP:
+  nop
+  nop
 
-  # LEAL  8(%ESI), %ESI     # ESI <- M[ESI + 8] (ESI = root2->next)
-  # CALL  edit_dist_asm
-  INCL  %EAX
-  JMP   RETURN0
+  # ====================== Returns ======================
+RET0:
+  movl $0, %eax        # Return Zero
+  jmp DONE
+RET1_R1_R2NEXT:
+  # Caller Setup
+  # Save Registers
+  # Parameters
+  call edit_dist_asm
+  incl %eax             # +1
+  jmp DONE
+RET1_R1NEXT_R2:
+  # Caller Setup
+  jmp DONE
+  # ====================== Returns ======================
 
-DONE2:
-  #PUSH STUFF
+DONE: 
+  # Restore Registers
+  popl %edi
+  popl %esi
+  popl %ebx
 
-  # LEAL  8(%EBX), %EBX     # EBX <- M[EBX + 8] (EBX = root1->next)
-  # CALL  edit_dist_asm
-  INCL  %EAX
-  JMP   RETURN0
-
-RETURN0:
-  # TEARDOWN0
-  # --- STUDENT CODE ENDS HERE ---
-
+  # Callee Teardown
   leave
   ret
 
+NULL: .long 0
