@@ -102,10 +102,47 @@ ROOT_VAL_CMP:
 
 BODY: # TEST
   # call edit_dist_asm(root1->next, root2) for insert
+  pushl %esi
+  pushl %ebx
+  # Push Parameters
+  pushl %esi            # Push root2
+  pushl NEXT(%ebx)      # Push root1->next
+  # Finished Caller Setup
+  call edit_dist_asm
+  # Pop Parameters x2
+  addl $8, %esp
+  popl %esi
+  popl %ebx
   movl %eax, -4(%ebp) 
-  # call edit_dist_asm(root1, root2->next) for delete         # Todo
+
+
+  # call edit_dist_asm(root1, root2->next) for delete
+  pushl %esi
+  pushl %ebx
+  # Push Parameters
+  pushl NEXT(%esi)      # Push root2->next
+  pushl %ebx            # Push root1
+  # Finished Caller Setup
+  call edit_dist_asm
+  # Pop Parameters x2
+  addl $8, %esp
+  popl %esi
+  popl %ebx
   movl %eax, -8(%ebp)
+
+
   # call edit_dist_asm(root1->next, root2->next) for replace
+  pushl %esi
+  pushl %ebx
+  # Push Parameters
+  pushl NEXT(%esi)      # Push root2->next
+  pushl NEXT(%ebx)            # Push root1
+  # Finished Caller Setup
+  call edit_dist_asm
+  # Pop Parameters x2
+  addl $8, %esp
+  popl %esi
+  popl %ebx
   movl %eax, -12(%ebp)
 
   # insert <= delete && insert <= replace
@@ -151,21 +188,37 @@ RET1_R1NEXT_R2:         # return 1 + edit_dist_asm(root1->next, root2)
   addl $8, %esp
   incl %eax             # return + 1
   jmp DONE
-RET_R1NEXT_R2NEXT:
-  # Caller Setup        TODO
+RET_R1NEXT_R2NEXT:    # TEST      return edit_dist_c(root1->next, root2->next);
+  # Push Parameters
+  pushl NEXT(%esi)      # Push root2->next
+  pushl NEXT(%ebx)            # Push root1
+  # Finished Caller Setup
+  call edit_dist_asm
+  # Pop Parameters x2
+  addl $8, %esp
   jmp DONE
-RET1_INSERT:
-  # TODO return 1 + insert;
+RET1_INSERT:            # TEST # return 1 + insert;
+  movl -4(%ebp), %eax
+  incl %eax
   jmp DONE
-RET1_DELETE:
-  # Todo return 1 + delete;
+RET1_DELETE:            # TEST # return 1 + delete;
+  movl -8(%ebp), %eax
+  incl %eax
   jmp DONE
-RET1_REPLACE:
-  # TODO return 1 + replace;
+RET1_REPLACE:           # TEST # return 1 + replace;
+  movl -12(%ebp), %eax
+  incl %eax
   jmp DONE
   # ====================== Returns ======================
 
 DONE: 
+  /* Deallocate Space for Local Variables
+    -4(%ebp) : insert
+    -8(%ebp) : delete
+    -12(%ebp) : replace
+  */
+  addl $12, %esp
+
   # Restore Registers
   popl %edi
   popl %esi
