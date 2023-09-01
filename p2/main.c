@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
 
   printf("\nRunnin Edit Dist in C\n");
   printf("edit_dist_c results: \n");
-  result = edit_dist_c(root1, root2);
+  result = edit_dist_c(root1, NULL);
   printf("%d\n", result);
 
   root1 = import_linked_list(argv[1]);

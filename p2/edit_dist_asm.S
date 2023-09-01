@@ -81,35 +81,87 @@ ROOTS_CMP_NULL:
   jne ROOT1_CMP_NULL      # Continue
   jmp RET0                # return 0
 
-# root1 == NULL
+  # root1 == NULL
 ROOT1_CMP_NULL:
   cmpl %ebx, NULL
   jne ROOT2_CMP_NULL      # Continue
   jmp RET1_R1_R2NEXT      # return 1 + edit_dist_asm(root1, root2->next)
 
-# root2 == NULL
+  # root2 == NULL
 ROOT2_CMP_NULL:
   cmpl %esi, NULL
   jne ROOT_VAL_CMP        # Continue
   jmp RET1_R1NEXT_R2      # return 1 + edit_dist_asm(root1->next, root2) 
 
+  # root1->val == root2->val
 ROOT_VAL_CMP:
-  nop
-  nop
+  movl VAL(%esi), %edi    # Load root2->val
+  cmpl VAL(%ebx), %edi    # Compare root2->val - root1->val
+  jne BODY
+  jmp RET_R1NEXT_R2NEXT
 
-  # ====================== Returns ======================
+BODY: # TEST
+  # call edit_dist_asm(root1->next, root2) for insert
+  movl %eax, -4(%ebp) 
+  # call edit_dist_asm(root1, root2->next) for delete         # Todo
+  movl %eax, -8(%ebp)
+  # call edit_dist_asm(root1->next, root2->next) for replace
+  movl %eax, -12(%ebp)
+
+  # insert <= delete && insert <= replace
+MIN_INSERT: # TEST
+  movl -4(%ebp), %edi     # Grab insert to edi
+  cmpl -8(%ebp), %edi     # Compare insert - delete
+  ja MIN_DELETE           # Continue
+  cmpl -12(%ebp), %edi    # Compare insert - replace
+  ja MIN_DELETE           # Continue
+  jmp RET1_INSERT
+
+  # delete <= replace
+MIN_DELETE:  # TEST
+  movl -8(%ebp), %edi     # Grab delete to edi
+  cmpl -12(%ebp), %edi    # Compare delete - replace
+  ja MIN_REPLACE          # Continue
+  jmp RET1_DELETE
+
+MIN_REPLACE: # TEST
+  jmp RET1_REPLACE
+
+  # ====================== Return Cases ======================
 RET0:
-  movl $0, %eax        # Return Zero
+  movl $0, %eax         # Return Zero
   jmp DONE
-RET1_R1_R2NEXT:
-  # Caller Setup
-  # Save Registers
-  # Parameters
+RET1_R1_R2NEXT:         # return 1 + edit_dist_asm(root1, root2->next)
+  # Push Parameters
+  pushl NEXT(%esi)      # Push root2->next
+  pushl %ebx            # Push root1
+  # Finished Caller Setup
   call edit_dist_asm
-  incl %eax             # +1
+  # Pop Parameters x2
+  addl $8, %esp
+  incl %eax             # return + 1
   jmp DONE
-RET1_R1NEXT_R2:
-  # Caller Setup
+RET1_R1NEXT_R2:         # return 1 + edit_dist_asm(root1->next, root2) 
+  # Push Parameters
+  pushl %esi            # Push root2
+  pushl NEXT(%ebx)      # Push root1->next
+  # Finished Caller Setup
+  call edit_dist_asm
+  # Pop Parameters x2
+  addl $8, %esp
+  incl %eax             # return + 1
+  jmp DONE
+RET_R1NEXT_R2NEXT:
+  # Caller Setup        TODO
+  jmp DONE
+RET1_INSERT:
+  # TODO return 1 + insert;
+  jmp DONE
+RET1_DELETE:
+  # Todo return 1 + delete;
+  jmp DONE
+RET1_REPLACE:
+  # TODO return 1 + replace;
   jmp DONE
   # ====================== Returns ======================
 
