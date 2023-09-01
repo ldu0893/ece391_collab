@@ -59,16 +59,20 @@ edit_dist_asm:
   # insert
   # EDX
   # ECX
+  # EDI
   # ESI
   # EBX
   # old EDB <- frame ptr EBP
   # return addr
   # root1
   # root2
+
   PUSHL %EBX              # push root1 (parameter)
   PUSHL %ESI              # push root2 (parameter)
+  PUSHL %EDI
   PUSHL %ECX              # push register ECX (used for )
   PUSHL %EDX              # push register EDX (used for computations)
+  
   # PUSHL $0                # push RV
 
   # push CFP, RA, RV?
@@ -76,11 +80,13 @@ edit_dist_asm:
   PUSHL $0                # delete
   PUSHL $0                # replace
 
-  LEAL  8(%EBP), %EBX     # EBX <- root1
-  LEAL  12(%EBP), %ESI    # ESI <- root2 
+  MOVL  8(%EBP), %EBX     # EBX <- *root1
+  MOVL  12(%EBP), %ESI    # ESI <- *root2 
 
-  MOVL  %EBX, %ECX        # ECX <- root1
-  ORL   %ESI, %ECX        # ECX <- root1 OR root2
+  MOVL  %EBX, %ECX        # ECX <- *root1
+  ORL   %ESI, %ECX        # ECX <- *root1 OR *root2
+
+  # MOST OF THESE ROOT1 AND ROOT2 ARE *ROOT1 AND *ROOT2 FIX IT LATER
   CMPL  $0, %ECX          # (root1 && root2 == 0)?  (to set flags)
   JE    DONE0             # if root1 (bitwise OR) root2 = 0 (NUll), go to done0 (done0 = return 0)
   CMPL  $0, %EBX          # does root1 == 0? (to set flags)
@@ -88,30 +94,28 @@ edit_dist_asm:
   CMPL  $0, %ESI          # does root2 == 0? (perform comparison)
   JE    DONE2             # if root2 = NULL, done2                   (done2 = return 1 + (edit_dist_c(root1->next,root2)))
 
-  MOVL  (%EBX), %ECX
-  MOVL  4(%ECX), %ECX     # ECX <- root1->val
-  MOVL  (%ESI), %EDX
-  MOVL  4(%EDX), %EDX     # EDX <- root2->val
+  MOVL  4(%EBX), %ECX     # ECX <- root1->val
+  MOVL  4(%ESI), %EDX     # EDX <- root2->val
   CMPL  %ECX, %EDX        # (root1->val == root2->val) ?? 
   JE    DONE3             # if root1->val = root2->val, done3        (done3 = return (edit_dist_c(root1->next,root2->next)))
 
 
   #$#$#$#$#$#$#$#$#$#$#$#$#$   The next section of code sets the insert, delete, and replace to edit_dist_c() #$#$#$#$#$#$#$#$#$#$#$#$#$
 
-  LEAL  8(%EBX), %ECX     # ECX <- M[EBX + 8] (ECX = root1->next)
+  MOVL  8(%EBX), %ECX     # ECX <- M[EBX+8] (ECX = root1->next)
   PUSHL %ESI              # push root2
   PUSHL %ECX              # push root1->next
   CALL  edit_dist_asm     # Go to function (insert = edit_dist_c(root1->next, root2))
   MOVL  %EAX, 8(%ESP)     # insert = edit_dist_c(root1->next, root2)
 
-  LEAL  8(%ESI), %ECX     # ECX <- M[ESI + 8] (ECX = root2->next)
+  MOVL  8(%ESI), %ECX     # ECX <- M[ESI+8] (ECX = root2->next)
   PUSHL %ECX              # push root2->next
   PUSHL %EBX              # push root1
   CALL  edit_dist_asm     # go to function (delete = edit_dist_c(root1, root2->next))
   MOVL  %EAX, 4(%ESP)     # delete <- edit_dist_c(root1, root2->next)
 
-  LEAL  8(%EBX), %ECX     # ECX = root1->next
-  LEAL  8(%ESI), %EDX     # EDX = root2->next
+  MOVL  8(%EBX), %ECX     # ECX = root1->next
+  MOVL  8(%ESI), %EDX     # EDX = root2->next
   PUSHL %EDX              # push root2->next
   PUSHL %ECX              # push root1->next
   CALL  edit_dist_asm     # go to function (delete = edit_dist_c(root1))
@@ -119,7 +123,7 @@ edit_dist_asm:
 
   ##$#$#$#$#$#$#$#$#$#$#$#$#$ The next section of code is the if statements for the insert, delete, replace #$#$#$#$#$#$#$#$#$#$##$#$#$#$$3
 
-  LEAL  8(%ESP), %ECX     # ECX points to insert now
+  MOVL  8(%ESP), %ECX     # ECX points to insert now
   CMPL  4(%ESP), %ECX     # insert - delete
   JA    AFTER0            # if insert > delete, false ( we go on and don't return)
   CMPL  (%ESP), %ECX      # insert - replace
@@ -129,7 +133,7 @@ edit_dist_asm:
   JMP   RETURN0           # return (1 + insert)
 
 AFTER0:
-  LEAL  4(%ESP), %ECX     # ECX points to delete now
+  MOVL  4(%ESP), %ECX     # ECX points to delete now
   CMPL  (%ESP), %ECX      # delete - replace
   JA    AFTER1            # if delete > replace, then we go on and don't return
   MOVL  4(%ESP), %EAX     # return value contains delete
@@ -137,9 +141,8 @@ AFTER0:
   JMP   RETURN0           # return (1 + delete) Larry make sure that EAX has the value of delete... I can't tell at first glance
 
 AFTER1:
-
   MOVL  (%ESP), %EAX      # Return value gets replace
- INCL  %EAX               # Then incremented by one so that it is 1 + replace
+  INCL  %EAX              # Then incremented by one so that it is 1 + replace
   JMP   RETURN0           # Then we are done, and proceed to stack teardown
 
 DONE0: # (done0 = return 0)
@@ -147,7 +150,7 @@ DONE0: # (done0 = return 0)
   JMP   RETURN0           # Go to return0
 
 DONE1:                    # (done1 = return 1 + edit_dist_c(root1,root2->next))
-  LEAL  8(%ESI), %ECX     # ECX <- M[ESI + 8] (ECX = root2->next)
+  MOVL  8(%ESI), %ECX     # ECX <- M[ESI + 8] (ECX = root2->next)
   PUSHL %ECX              # push root2->next
   PUSHL %EBX              # push root1
   CALL  edit_dist_asm     # call function again
@@ -156,7 +159,7 @@ DONE1:                    # (done1 = return 1 + edit_dist_c(root1,root2->next))
 
 DONE2:                    # (done2 = return 1 + (edit_dist_c(root1->next,root2)))
 
-  LEAL  8(%EBX), %ECX     # ECX <- M[EBX + 8] (ECX = root1->next)
+  MOVL  8(%EBX), %ECX     # ECX <- M[EBX + 8] (ECX = root1->next)
   PUSHL %ESI              # push root2
   PUSHL %ECX              # push root1->next (pushing parameters to stack)
   CALL  edit_dist_asm     # Call the function again
@@ -164,8 +167,8 @@ DONE2:                    # (done2 = return 1 + (edit_dist_c(root1->next,root2))
   JMP   RETURN0           # go to return 0
 
 DONE3:                    # done3 = return (edit_dist_c(root1->next,root2->next))
-  LEAL  8(%EBX), %ECX     # ECX = root1->next
-  LEAL  8(%ESI), %EDX     # EDX = root2->next
+  MOVL  8(%EBX), %ECX     # ECX = root1->next
+  MOVL  8(%ESI), %EDX     # EDX = root2->next
   PUSHL %EDX              # push root2->next
   PUSHL %ECX              # push root1->next
   CALL  edit_dist_asm     # Call the function again
@@ -174,7 +177,13 @@ DONE3:                    # done3 = return (edit_dist_c(root1->next,root2->next)
 
 RETURN0:
   # TEARDOWN0
-  # ADDL  $  #something something
+  ADDL  $12, %ESP         # pop insert, delete, replace
+  POPL  %EDX
+  POPL  %ECX
+  POPL  %EDI
+  POPL  %ESI
+  POPL  %EBX
+
   # --- STUDENT CODE ENDS HERE ---
 
   leave
