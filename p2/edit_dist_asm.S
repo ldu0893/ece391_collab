@@ -62,16 +62,16 @@ edit_dist_asm:
   pushl %esi      # Register for Root2
   pushl %edi      # Temporary 
 
-  # Load Parameters
-  movl 8(%ebp), %ebx
-  movl 12(%ebp), %esi
-
   /* Allocate Space for Local Variables
     -4(%ebp) : insert
     -8(%ebp) : delete
     -12(%ebp) : replace
   */
   subl $12, %esp
+
+  # Load Parameters
+  movl 8(%ebp), %ebx
+  movl 12(%ebp), %esi
 
   # root1 == NULL && root2 == NULL
 ROOTS_CMP_NULL:
@@ -111,8 +111,8 @@ BODY: # TEST
   call edit_dist_asm
   # Pop Parameters x2
   addl $8, %esp
-  popl %esi
   popl %ebx
+  popl %esi
   movl %eax, -4(%ebp) 
 
 
@@ -126,8 +126,8 @@ BODY: # TEST
   call edit_dist_asm
   # Pop Parameters x2
   addl $8, %esp
-  popl %esi
   popl %ebx
+  popl %esi
   movl %eax, -8(%ebp)
 
 
@@ -141,8 +141,8 @@ BODY: # TEST
   call edit_dist_asm
   # Pop Parameters x2
   addl $8, %esp
-  popl %esi
   popl %ebx
+  popl %esi
   movl %eax, -12(%ebp)
 
   # insert <= delete && insert <= replace
