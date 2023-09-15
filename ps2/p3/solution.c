@@ -5,6 +5,8 @@
 
 ps_lock ps_lock_create(spinlock_t *lock) {
   // Fill this out!!!
+
+  
 }
 
 void professor_enter(ps_lock *ps) {
