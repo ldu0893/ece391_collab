@@ -190,9 +190,47 @@ RETURN0:
   POPL  %ESI
   POPL  %EBX
 
+  PUSHL %ECX
+  PUSHL %EDX
+
+  MOVL  %EBX, %ECX        # ECX <- root1
+  MOVL  %ESI, %EDX        # EDX <- root2
+  ORL   %EDX, %ECX        # ECX <- ECX OR EDX
+  CMPL  $0, %ECX          # ECX - 0
+  JE    DONE0
+
+  CMPL  $0, %EBX          # EBX - 0
+  JE    DONE1
+
+  CMPL $0, %ESI           # ESI - 0
+  JE    DONE2
+
+DONE0:
+  XORL  %EAX, %EAX        # EAX <- 0
+  JMP   RETURN0
+
+DONE1:
+  # PUSHL %EBX
+  # PUSHL %ESI
+  # PUSH SOMETHING
+
+  # LEAL  8(%ESI), %ESI     # ESI <- M[ESI + 8] (ESI = root2->next)
+  # CALL  edit_dist_asm
+  INCL  %EAX
+  JMP   RETURN0
+
+DONE2:
+  #PUSH STUFF
+
+  # LEAL  8(%EBX), %EBX     # EBX <- M[EBX + 8] (EBX = root1->next)
+  # CALL  edit_dist_asm
+  INCL  %EAX
+  JMP   RETURN0
+
+RETURN0:
+  # TEARDOWN0
   # --- STUDENT CODE ENDS HERE ---
 
   leave
   ret
-
 
