@@ -35,6 +35,9 @@
 #include "mystery.h"
 
 uint32_t mystery_c(uint32_t x, uint32_t y) {
+ //------- YOUR CODE HERE -------
+
+  //------------------------------
   // Initial Checks for invalid inputs
   if (y > 24 || x >= 42)
     return 0;
