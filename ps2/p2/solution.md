@@ -34,7 +34,7 @@ tuxctl_handle_packet) wait (for example, go to sleep).  Explain in one
 sentence why the code cannot wait.
 
 
-a. yada yada yada
+a.
 
 MTCP_BIOC_ON is sent when the computer wants to enable interrupts from the Mouse/Tux controller buttons.
 The effect is that the Tux controller can send interrupt signals when the button is pressed. The result is that 
@@ -45,7 +45,7 @@ The first byte of this argument determines which of the LEDs to set, and consequ
 The number of bytes that follow equal the number of bits set to 1 in the first byte. These bytes correspond to particular LEDs, and the
 bits of each byte (which corresponds to an LED) correspond to the seven segments of its respective LED's seven-segment display.
 
-b. yada yada yada
+b.
 
 MTCP_ACK is the response returned when the Mouse/Tux controller successfully completes a command. The information 
 conveyed by the message is that the Mouse/Tux controller successfully completed a command that the computer sent it.
@@ -59,6 +59,6 @@ computer to the Mouse/Tux controller, and this causes the device to reset. The d
 itself, at which point it sends the MTCP_RESET signal. This message conveys that some sort of reset was applied to the Mouse/Tux
 controller.
 
-c. yada yada yada
+c.
 The code cannot wait because the function is called by an interrupt, so it can't take too much time, otherwise the program will 
 take too long.
