@@ -9,7 +9,9 @@ typedef struct ps_enter_exit_lock {
   int prof_count;
   int ta_count;
   int student_count;
-  
+  int tot_count;
+  int prof_queue_count;
+  int ta_queue_count;
 } ps_lock;
 
 ps_lock ps_lock_create(spinlock_t *lock);
