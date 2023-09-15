@@ -5,6 +5,11 @@
 
 typedef struct ps_enter_exit_lock {
   // Fill this out!!!
+  spinlock_t* lock;
+  int prof_count;
+  int ta_count;
+  int student_count;
+  
 } ps_lock;
 
 ps_lock ps_lock_create(spinlock_t *lock);

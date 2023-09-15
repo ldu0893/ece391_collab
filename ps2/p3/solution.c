@@ -4,11 +4,11 @@
 
 
 ps_lock ps_lock_create(spinlock_t *lock) {
-  // Fill this out!!!
+  spinlock_init_ece391(lock);
 }
 
 void professor_enter(ps_lock *ps) {
-  // Fill this out!!!
+  // spinlock_lockps->lock  
 }
 
 void professor_exit(ps_lock *ps) {
