@@ -4,12 +4,12 @@
 
 
 typedef struct ps_enter_exit_lock {
-  // Fill this out!!!
-  spinlock_t* lock;
-  volatile int prof_count;
-  volatile int ta_count;
-  volatile int student_count;
-  volatile int tot_count;
+  int count_profs;
+  int count_tas;
+  int count_students;
+  int queue_profs;
+  int queue_tas;
+  spinlock_t *lock;
 } ps_lock;
 
 ps_lock ps_lock_create(spinlock_t *lock);
